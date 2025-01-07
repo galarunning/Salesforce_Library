@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,9 @@ namespace SalesforceEngine
             UseShellExecute = false,
             CreateNoWindow = true
         };
+
+        
+
         private static readonly Dictionary<string, string> AutoResponses = new Dictionary<string, string>()
         {
             { "Enter Username:", "PTDirect@spirent.com" },
@@ -54,6 +58,94 @@ namespace SalesforceEngine
 
         #region Core Functions
 
+        #region Checking that Python is added to the PATH Environment Variable
+        private static void CheckPythonResponse()
+        {
+            string pythonFolder = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Programs\\Python";
+            bool pythonInstalled = Directory.Exists(pythonFolder);
+            if (!pythonInstalled) throw new Exception();
+
+            string[] versions = Directory.GetDirectories(pythonFolder);
+            if (versions.Length == 0) throw new Exception();
+
+            string pythonPath = versions[0] + "\\python.exe";
+            EngineWriter.WriteLine(pythonPath);
+
+            Console.WriteLine($"Found python version: {pythonPath}");
+
+            return;
+
+            #region Previous Code - Using CMD did not work well.
+            //if (versions.Length == 1)
+            //{
+            //    return versions[0]
+
+
+            //}
+
+            //else
+            //{
+            //    Return first or latest
+            //}
+
+            //Checking if Python is not added to PATH
+            //if (!SFEngine.StandardOutput.ReadToEnd().Contains(">>>"))
+            //{
+            //    Looking in the standard Python installation location. % AppData %
+            //   EngineWriter.WriteLine($"cd {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Programs");
+            //    EngineWriter.WriteLine($"dir /b");
+
+            //    if (!SFEngine.StandardOutput.ReadToEnd().Contains("Python"))
+            //    {
+            //        throw new Exception("Python not installed on this Machine. Please Install Python!");
+            //    }
+            //    else
+            //    {
+            //        Find Python Version
+            //        EngineWriter.WriteLine($"cd \\Python");
+            //        EngineWriter.WriteLine($"dir /b");
+
+            //        string PythonVersions = SFEngine.StandardOutput.ReadToEnd();
+
+            //        Check if only one Python Version is installed
+            //        if (IsPythonOnlyOnce(PythonVersions))
+            //        {
+            //            EngineWriter.WriteLine($"cd \\{PythonVersions}\\python.exe");
+            //        }
+            //        else
+            //        {
+            //            EngineWriter.WriteLine($"cd \\{PythonVersions.Split()[0]}\\python.exe");
+            //        }
+            //    }
+            //}
+            
+        }
+
+        static bool IsPythonOnlyOnce(string input, string Python="Python")
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return false;
+
+            // Use StringSplitOptions to handle edge cases with multiple spaces
+            string[] words = input.Split(new[] { ' ', '.', ',', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+            int count = 0;
+
+            foreach (string w in words)
+            {
+                if (string.Equals(w, Python, StringComparison.OrdinalIgnoreCase))
+                {
+                    count++;
+                    if (count > 1)
+                        return false; // Exit if the word appears more than once
+                }
+            }
+
+            return count == 1;
+        }
+        #endregion
+        
+        #endregion
+
         public static void StartEngine()
         {
             InitialiseEngineProcess();
@@ -65,12 +157,12 @@ namespace SalesforceEngine
                 throw new Exception("Salesforce.py needs to be added to added to the same folder as caling .exe");
             }
 
-            // ToDo: Find latest python version
-            //EngineWriter.WriteLine($"cd {Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)}\\AppData\\Local\\Programs\\Python\\Python37");
-            //EngineWriter.WriteLine($"cd {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Programs\\Python\\Python37");
             EngineWriter.WriteLine($"python \"{EnginePath}\"");
-            
-            WaitForEngineAvailability();
+
+            //ToDo: Complete Implementation of the below method. Currently not working.
+            //Error: Cannot mix synchronous and asyncronous operations on process stream.
+            //WaitForEngineAvailability();
+            //CheckPythonResponse();
         }
 
         public static async Task<string> StartEngineAsync()
@@ -86,7 +178,11 @@ namespace SalesforceEngine
 
             EngineWriter.WriteLine($"cd {Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)}");
             EngineWriter.WriteLine($"python.exe \"{EnginePath}\"");
-            
+
+            //ToDo: Complete Implementation of the below method. Currently not working.
+            //SFEngine.WaitForExit();
+            //CheckPythonResponse();
+
             await WaitForEngineAvailabilityAsync();
 
             return "";

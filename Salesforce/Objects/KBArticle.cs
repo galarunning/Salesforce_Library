@@ -21,7 +21,6 @@ namespace SalesforceEngine.Objects
             {
                 _id = value;
                 OnPropertyChanged("Id");
-                
             }
         }
 
